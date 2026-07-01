@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="35%" fy="35%">
+      <stop offset="0%" stop-color="#2a2765" />
+      <stop offset="70%" stop-color="#0f0c29" />
+      <stop offset="100%" stop-color="#020015" />
+    </radialGradient>
+    
+    <!-- Moon Glow Filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feColorMatrix type="matrix" values="1 0 0 0 1   0 0.6 0 0 0.6   0 0 0 0 0   0 0 0 0.5 0" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Moon Gradient -->
+    <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb74d" />
+      <stop offset="50%" stop-color="#ff9800" />
+      <stop offset="100%" stop-color="#f57c00" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="4" />
+
+  <!-- Stars -->
+  <!-- Star 1 -->
+  <polygon points="340,160 343,168 351,170 343,172 340,180 337,172 329,170 337,168" fill="#ffffff" opacity="0.9" />
+  <!-- Star 2 -->
+  <polygon points="180,120 182,125 187,126 182,127 180,132 178,127 173,126 178,125" fill="#ffffff" opacity="0.8" />
+  <!-- Star 3 -->
+  <polygon points="130,280 131,284 135,285 131,286 130,290 129,286 125,285 129,284" fill="#ffffff" opacity="0.7" />
+  <!-- Star 4 -->
+  <polygon points="380,300 381,304 385,305 381,306 380,310 379,306 375,305 379,304" fill="#ffffff" opacity="0.85" />
+  
+  <!-- Tiny sparkle stars -->
+  <circle cx="280" cy="110" r="2" fill="#ffffff" opacity="0.5" />
+  <circle cx="390" cy="200" r="3" fill="#ffffff" opacity="0.6" />
+  <circle cx="160" cy="210" r="2" fill="#ffffff" opacity="0.5" />
+  <circle cx="230" cy="380" r="2.5" fill="#ffffff" opacity="0.6" />
+
+  <!-- Crescent Moon -->
+  <path d="M 260,140 
+           A 110,110 0 0,0 260,360 
+           A 130,130 0 0,1 260,140 Z" 
+        fill="url(#moonGrad)" 
+        filter="url(#glow)" />
+</svg>
