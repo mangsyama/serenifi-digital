@@ -19,14 +19,15 @@
 </head>
 
 <body>
-  <div id="ambient-backdrop"></div>
+  <div id="ambient-backdrop-1" class="ambient-backdrop"></div>
+  <div id="ambient-backdrop-2" class="ambient-backdrop" style="opacity: 0;"></div>
   <canvas id="ambient-canvas"></canvas>
   <div class="device mx-auto my-5 p-4 rounded-2xl shadow-lg">
     <div class="top-row flex justify-between items-center mb-4">
       <div class="btn-row flex gap-3">
         <button class="btn btn-top power" id="power-btn" title="Power On/Off"><i class="fas fa-power-off"></i></button>
-        <button class="btn btn-top" id="volume-up-btn" disabled title="Volume Up"><i class="fas fa-plus"></i></button>
         <button class="btn btn-top" id="volume-down-btn" disabled title="Volume Down"><i class="fas fa-minus"></i></button>
+        <button class="btn btn-top" id="volume-up-btn" disabled title="Volume Up"><i class="fas fa-plus"></i></button>
         <button class="btn btn-top" id="duration-cycle-btn" disabled title="Set Timer"><i class="fas fa-clock"></i></button>
       </div>
       <div class="screen text-right">

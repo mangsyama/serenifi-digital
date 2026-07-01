@@ -26,6 +26,7 @@ const state = {
 
 // Elemen DOM
 const elements = {
+    device: document.querySelector('.device'),
     powerBtn: document.getElementById('power-btn'),
     volumeUpBtn: document.getElementById('volume-up-btn'),
     volumeDownBtn: document.getElementById('volume-down-btn'),
@@ -181,6 +182,7 @@ elements.powerBtn.addEventListener('click', () => {
         // ON
         elements.powerBtn.classList.add('on');
         elements.lcdElement.classList.add('active');
+        elements.device.classList.add('active');
         elements.statusText.textContent = `VOL: ${Math.round(state.masterVolume * 100)}%`; 
         updateTimerDisplay();
         toggleControls(true);
@@ -188,6 +190,7 @@ elements.powerBtn.addEventListener('click', () => {
         // OFF
         elements.powerBtn.classList.remove('on');
         elements.lcdElement.classList.remove('active');
+        elements.device.classList.remove('active');
         
         // Matikan timer dan ubah UI langsung
         state.isPlaying = false;
@@ -527,8 +530,8 @@ const ambientVisualizer = {
     },
 
     updateTheme(dominantFile, isPoweredOn) {
-        const backdrop = document.getElementById('ambient-backdrop');
-        if (!backdrop) return;
+        if (this.activeBackdrop === undefined) this.activeBackdrop = 1;
+        if (this.currentGradient === undefined) this.currentGradient = '';
 
         let bgGradient = 'linear-gradient(135deg, #090a16 0%, #03040b 100%)'; // default power-off
 
@@ -566,7 +569,29 @@ const ambientVisualizer = {
             }
         }
 
-        backdrop.style.background = bgGradient;
+        // Jika gradasi yang baru sama dengan yang lama, lewati transisi
+        if (this.currentGradient === bgGradient) return;
+        this.currentGradient = bgGradient;
+
+        const bd1 = document.getElementById('ambient-backdrop-1');
+        const bd2 = document.getElementById('ambient-backdrop-2');
+        if (!bd1 || !bd2) return;
+
+        if (this.activeBackdrop === 1) {
+            // bd1 aktif (opacity 1), bd2 mati (opacity 0)
+            // Terapkan gradien baru di bd2, buat bd2 fade-in (1) dan bd1 fade-out (0)
+            bd2.style.background = bgGradient;
+            bd2.style.opacity = '1';
+            bd1.style.opacity = '0';
+            this.activeBackdrop = 2;
+        } else {
+            // bd2 aktif (opacity 1), bd1 mati (opacity 0)
+            // Terapkan gradien baru di bd1, buat bd1 fade-in (1) dan bd2 fade-out (0)
+            bd1.style.background = bgGradient;
+            bd1.style.opacity = '1';
+            bd2.style.opacity = '0';
+            this.activeBackdrop = 1;
+        }
     },
 
     getGenerationCount(rate, dt) {
