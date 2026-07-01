@@ -1,4 +1,4 @@
-const CACHE_NAME = 'serenifi-cache-v1';
+const CACHE_NAME = 'serenifi-cache-v7';
 const PRECACHE_ASSETS = [
   './',
   'index.html',

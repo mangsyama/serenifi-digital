@@ -1,10 +1,33 @@
 body {
-      background-color: #e9ecef;
+      background-color: #080914;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       padding: 15px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    #ambient-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      background: linear-gradient(135deg, #090a16 0%, #03040b 100%);
+      transition: background 1.8s ease-in-out;
+    }
+
+    #ambient-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
     }
 
     .device {
@@ -132,7 +155,16 @@ body {
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: #e9ecef;
+        background-color: transparent;
+      }
+      #ambient-canvas, #ambient-backdrop {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
       }
       .device {
         transform: rotate(90deg);
