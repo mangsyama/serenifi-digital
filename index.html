@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SERENIFI Digital Smart Sleep Aid</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="device mx-auto my-5 p-4 rounded-2xl shadow-lg">
+    <div class="top-row flex justify-between items-center mb-4">
+      <div class="btn-row flex gap-3">
+        <button class="btn btn-top power" id="power-btn" title="Power On/Off"><i class="fas fa-power-off"></i></button>
+        <button class="btn btn-top" id="volume-up-btn" disabled title="Volume Up"><i class="fas fa-plus"></i></button>
+        <button class="btn btn-top" id="volume-down-btn" disabled title="Volume Down"><i class="fas fa-minus"></i></button>
+        <button class="btn btn-top" id="duration-cycle-btn" disabled title="Set Timer"><i class="fas fa-clock"></i></button>
+      </div>
+      <div class="screen text-right">
+        <div class="lcd"> 
+          <p class="mb-0 time" id="countdown-display">00:00</p>
+          <small id="status-text">OFF</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row w-full flex items-end mt-3">
+      <div class="slider-group w-full flex justify-between" id="sound-sliders-static">
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="hujan_petir.mp3" disabled>
+          <button class="icon-btn" title="Hujan Petir"><i class="fas fa-cloud-showers-heavy"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="burung.mp3" disabled>
+          <button class="icon-btn" title="Burung"><i class="fas fa-feather-alt"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="angin.mp3" disabled>
+          <button class="icon-btn" title="Angin"><i class="fas fa-wind"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="air.mp3" disabled>
+          <button class="icon-btn" title="Air Mengalir"><i class="fas fa-water"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="api.mp3" disabled>
+          <button class="icon-btn" title="Api Unggun"><i class="fas fa-fire"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="kereta.mp3" disabled>
+          <button class="icon-btn" title="Kereta Api"><i class="fas fa-train"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="jangkrik.mp3" disabled>
+          <button class="icon-btn" title="Jangkrik"><i class="fas fa-bug"></i></button>
+        </div>
+        <div class="slider-item">
+          <input type="range" min="0" max="100" value="0" class="vertical sound-slider" data-sound-file="lonceng.mp3" disabled>
+          <button class="icon-btn" title="Lonceng"><i class="fas fa-bell"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoom-out-btn" title="Zoom Out"><i class="fas fa-minus"></i></button>
+    <button class="zoom-btn" id="zoom-in-btn" title="Zoom In"><i class="fas fa-plus"></i></button>
+  </div>
+
+  <script src="script.js"></script> 
+</body>
+</html>
