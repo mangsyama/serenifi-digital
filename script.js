@@ -1,13 +1,13 @@
 // Konfigurasi
 const SOUNDS = [
     { name: 'Hujan Petir', file: 'hujan_petir.mp3', icon: 'fas fa-cloud-showers-heavy' },
-    { name: 'Burung', file: 'burung.mp3', icon: 'fas fa-feather-alt' },
+    { name: 'Burung', file: 'burung.mp3', url: 'https://archive.org/download/burung_serenifi/burung.mp3', icon: 'fas fa-dove' },
     { name: 'Angin', file: 'angin.mp3', icon: 'fas fa-wind' },
-    { name: 'Air Mengalir', file: 'air.mp3', icon: 'fas fa-water' },
-    { name: 'Api Unggun', file: 'api.mp3', icon: 'fas fa-fire' },
+    { name: 'Air Mengalir', file: 'air.mp3', url: 'https://archive.org/download/air_20260701/air.mp3', icon: 'fas fa-water' },
+    { name: 'Api Unggun', file: 'api.mp3', url: 'https://archive.org/download/apii_serenifi/api.mp3', icon: 'fas fa-fire' },
     { name: 'Kereta Api', file: 'kereta.mp3', icon: 'fas fa-train' },
     { name: 'Jangkrik', file: 'jangkrik.mp3', icon: 'fas fa-bug' },
-    { name: 'Lonceng', file: 'lonceng.mp3', icon: 'fas fa-bell' }
+    { name: 'Lonceng', file: 'lonceng.mp3', url: 'https://archive.org/download/lonceng_serenifi/lonceng.mp3', icon: 'fas fa-bell' }
 ];
 
 const TIMER_DURATIONS = [0, 15, 30, 60, 90]; // 0=OFF, 15, 30, 60, 90 menit
@@ -45,9 +45,29 @@ const elements = {
 function initSounds() {
     // Buat elemen Audio (hidden) dan petakan ke audioElements
     SOUNDS.forEach(sound => {
-        const audio = new Audio(`./audio/${sound.file}`);
+        const sourceUrl = sound.url || `./audio/${sound.file}`;
+        const audio = new Audio(sourceUrl);
         audio.loop = true; 
         audio.volume = 0; 
+
+        // Dynamic Fallback: Jika gagal memuat online (misal offline/server down), putar berkas lokal
+        if (sound.url) {
+            audio.addEventListener('error', () => {
+                console.warn(`[Serenifi] Gagal memuat audio online untuk ${sound.name}. Menggunakan cadangan lokal.`);
+                const currentVolume = audio.volume;
+                const wasPaused = audio.paused;
+
+                audio.src = `./audio/${sound.file}`;
+                audio.load();
+                audio.volume = currentVolume;
+
+                // Jika sedang dimainkan dan volume aktif, putar kembali menggunakan file lokal
+                if (!wasPaused && currentVolume > 0.001) {
+                    audio.play().catch(err => console.error(`[Serenifi] Gagal memutar cadangan lokal untuk ${sound.name}:`, err));
+                }
+            }, { once: true });
+        }
+
         state.audioElements[sound.file] = audio;
     });
 
@@ -113,6 +133,57 @@ function checkPlayingStatus() {
             elements.statusText.textContent = state.isPoweredOn ? "READY" : "OFF";
         }
     }
+}
+
+/**
+ * Memeriksa status koneksi internet dan menonaktifkan kontrol audio online jika offline
+ */
+function updateOnlineOfflineStatus() {
+    const isOnline = navigator.onLine;
+    
+    SOUNDS.forEach(sound => {
+        if (sound.url) {
+            const slider = document.querySelector(`.sound-slider[data-sound-file="${sound.file}"]`);
+            if (slider) {
+                const sliderItem = slider.closest('.slider-item');
+                const button = sliderItem ? sliderItem.querySelector('.icon-btn') : null;
+                
+                if (!isOnline) {
+                    // Jika offline: nonaktifkan slider & tombol, serta reset volume audio online
+                    slider.disabled = true;
+                    slider.value = 0;
+                    if (button) {
+                        button.disabled = true;
+                        button.title = `${sound.name} (Offline - Butuh Internet)`;
+                    }
+                    slider.title = `${sound.name} (Offline - Butuh Internet)`;
+                    
+                    if (sliderItem) {
+                        sliderItem.classList.add('opacity-40', 'pointer-events-none');
+                    }
+                    
+                    // Set volume ke 0 langsung
+                    updateAudioVolume(sound.file, 0);
+                } else {
+                    // Jika online: aktifkan kembali (hanya jika power menyala)
+                    if (state.isPoweredOn) {
+                        slider.disabled = false;
+                        if (button) {
+                            button.disabled = false;
+                            button.title = sound.name;
+                        }
+                        slider.title = sound.name;
+                    }
+                    
+                    if (sliderItem) {
+                        sliderItem.classList.remove('opacity-40', 'pointer-events-none');
+                    }
+                }
+            }
+        }
+    });
+    
+    checkPlayingStatus();
 }
 
 // --- FUNGSI KONTROL PERANGKAT ---
@@ -186,6 +257,7 @@ elements.powerBtn.addEventListener('click', () => {
         elements.statusText.textContent = `VOL: ${Math.round(state.masterVolume * 100)}%`; 
         updateTimerDisplay();
         toggleControls(true);
+        updateOnlineOfflineStatus();
     } else {
         // OFF
         elements.powerBtn.classList.remove('on');
@@ -400,6 +472,11 @@ function initApp() {
     toggleControls(false);
     initZoom();
     initSliderTouchHelper();
+
+    // Deteksi online/offline
+    window.addEventListener('online', updateOnlineOfflineStatus);
+    window.addEventListener('offline', updateOnlineOfflineStatus);
+    updateOnlineOfflineStatus();
     
     // Inisialisasi visualizer latar belakang ambient
     ambientVisualizer.init();
@@ -635,14 +712,22 @@ const ambientVisualizer = {
             }
         }
 
-        // 4. Daun Gugur (Burung)
+        // 4. Burung Terbang & Nada Musik (Burung)
         const birdVol = volumes['burung.mp3'] || 0;
         if (birdVol > 0.02) {
-            const count = this.getGenerationCount(birdVol * 10, dt);
-            const leafCount = this.particles.filter(p => p.type === 'leaf').length;
-            if (leafCount < birdVol * 25) {
+            // Burung terbang melintas sesekali
+            const birdCount = this.particles.filter(p => p.type === 'bird_silhouette').length;
+            if (birdCount < birdVol * 5) {
+                if (Math.random() < birdVol * 0.03) {
+                    this.particles.push(new BirdSilhouette(w, h));
+                }
+            }
+            // Nada musik kicauan melayang ke atas
+            const noteCount = this.particles.filter(p => p.type === 'music_note').length;
+            if (noteCount < birdVol * 22) {
+                const count = this.getGenerationCount(birdVol * 7, dt);
                 for (let i = 0; i < count; i++) {
-                    this.particles.push(new LeafParticle(w, h));
+                    this.particles.push(new MusicNoteParticle(w, h));
                 }
             }
         }
@@ -862,30 +947,74 @@ class FireflyParticle {
     }
 }
 
-// 4. Daun Berguguran (Burung)
-class LeafParticle {
+// 4a. Siluet Burung Terbang (Burung)
+class BirdSilhouette {
     constructor(w, h) {
-        this.type = 'leaf';
-        this.x = Math.random() * w;
-        this.y = -15;
-        this.size = 5 + Math.random() * 7;
-        this.speedY = 28 + Math.random() * 38;
-        this.speedX = -12 + Math.random() * 24;
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotSpeed = (Math.random() - 0.5) * 1.8;
+        this.type = 'bird_silhouette';
+        this.x = -40; // Mulai dari luar layar kiri
+        this.y = h * 0.05 + Math.random() * h * 0.45; // Ketinggian acak di bagian atas layar
+        this.size = 8 + Math.random() * 8;
+        this.speedX = 65 + Math.random() * 45; // Terbang ke kanan
+        this.speedY = (Math.random() - 0.5) * 15; // Sedikit naik/turun
         this.life = 1;
-        this.maxLife = 9 + Math.random() * 9;
+        this.opacity = 0.22 + Math.random() * 0.35;
+        this.flapSpeed = 9 + Math.random() * 5;
+    }
+    update(dt, w, h) {
+        this.x += this.speedX * dt;
+        this.y += this.speedY * dt;
+        if (this.x > w + 40) {
+            this.life = 0;
+        }
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.translate(this.x, this.y);
+        
+        // Simulasikan gerakan mengepakkan sayap
+        const flap = Math.sin(performance.now() / 1000 * this.flapSpeed);
+        const wingY = -this.size * 0.4 * flap;
+        
+        ctx.beginPath();
+        // Sayap kiri ke badan tengah
+        ctx.moveTo(-this.size, wingY);
+        ctx.quadraticCurveTo(-this.size * 0.35, -this.size * 0.15, 0, 0);
+        // Badan tengah ke sayap kanan
+        ctx.quadraticCurveTo(this.size * 0.35, -this.size * 0.15, this.size, wingY);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
+
+// 4b. Nada Musik Kicauan (Burung)
+class MusicNoteParticle {
+    constructor(w, h) {
+        this.type = 'music_note';
+        this.x = Math.random() * w;
+        this.y = h + 15;
+        this.size = 13 + Math.random() * 7;
+        this.speedY = 38 + Math.random() * 32;
+        this.speedX = (Math.random() - 0.5) * 18;
+        this.life = 1;
+        this.maxLife = 5 + Math.random() * 4;
         this.currentLife = this.maxLife;
-        this.opacity = 0.25 + Math.random() * 0.35;
-        this.colorHue = 75 + Math.random() * 65; // daun hijau ke kuning tua/kecokelatan
+        this.opacity = 0.18 + Math.random() * 0.25;
+        const notes = ['♪', '♫', '♬', '♩'];
+        this.char = notes[Math.floor(Math.random() * notes.length)];
+        this.rotation = (Math.random() - 0.5) * 0.4;
     }
     update(dt, w, h) {
         this.currentLife -= dt;
         this.life = this.currentLife / this.maxLife;
-        this.y += this.speedY * dt;
-        this.x += (this.speedX + Math.sin(this.currentLife) * 13) * dt;
-        this.rotation += this.rotSpeed * dt;
-        if (this.y > h + 15 || this.x < -15 || this.x > w + 15) {
+        this.y -= this.speedY * dt;
+        this.x += (this.speedX + Math.sin(this.currentLife * 1.6) * 8) * dt;
+        if (this.y < -25 || this.life <= 0) {
             this.life = 0;
         }
     }
@@ -893,12 +1022,9 @@ class LeafParticle {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
-        ctx.fillStyle = `hsla(${this.colorHue}, 58%, 38%, ${this.opacity * Math.min(1.0, this.life * 2)})`;
-        ctx.beginPath();
-        ctx.moveTo(0, -this.size / 2);
-        ctx.quadraticCurveTo(this.size / 2, 0, 0, this.size / 2);
-        ctx.quadraticCurveTo(-this.size / 2, 0, 0, -this.size / 2);
-        ctx.fill();
+        ctx.fillStyle = `rgba(180, 240, 210, ${this.opacity * this.life})`; // Hijau toska muda yang tenang
+        ctx.font = `${this.size}px sans-serif`;
+        ctx.fillText(this.char, 0, 0);
         ctx.restore();
     }
 }
