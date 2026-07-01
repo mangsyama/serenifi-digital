@@ -25,8 +25,8 @@
     </linearGradient>
   </defs>
 
-  <!-- Background Circle -->
-  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="4" />
+  <!-- Background Rounded Square -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="4" />
 
   <!-- Stars -->
   <!-- Star 1 -->
