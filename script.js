@@ -36,76 +36,6 @@ const elements = {
     lcdElement: document.querySelector('.lcd')
 };
 
-// --- KONTROL DRAG SLIDER KUSTOM ---
-
-/**
- * Mengatur interaksi seret/geser sentuh (touch/drag) kustom untuk range slider
- */
-function setupSliderDrag(slider) {
-    let isDragging = false;
-
-    function updateValueFromCoords(clientX, clientY) {
-        const rect = slider.getBoundingClientRect();
-        const isRotated = window.innerWidth <= 640 && window.innerHeight > window.innerWidth;
-        
-        let pct = 0;
-        if (isRotated) {
-            // Jika terputar (portrait mobile), slider terlihat horizontal di layar.
-            // Ujung kiri adalah 0, ujung kanan adalah 100.
-            pct = (clientX - rect.left) / rect.width;
-        } else {
-            // Jika normal (desktop/landscape), slider terlihat vertikal di layar.
-            // Ujung bawah adalah 0, ujung atas adalah 100.
-            pct = (rect.bottom - clientY) / rect.height;
-        }
-        
-        pct = Math.max(0, Math.min(1, pct));
-        const val = Math.round(pct * 100);
-        slider.value = val;
-        
-        const soundFile = slider.getAttribute('data-sound-file');
-        updateAudioVolume(soundFile, val);
-        checkPlayingStatus();
-    }
-
-    slider.addEventListener('touchstart', (e) => {
-        isDragging = true;
-        const touch = e.touches[0];
-        updateValueFromCoords(touch.clientX, touch.clientY);
-        e.preventDefault();
-    }, { passive: false });
-
-    slider.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        const touch = e.touches[0];
-        updateValueFromCoords(touch.clientX, touch.clientY);
-        e.preventDefault();
-    }, { passive: false });
-
-    slider.addEventListener('touchend', () => {
-        isDragging = false;
-    });
-
-    slider.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        updateValueFromCoords(e.clientX, e.clientY);
-        
-        function onMouseMove(moveEvent) {
-            if (!isDragging) return;
-            updateValueFromCoords(moveEvent.clientX, moveEvent.clientY);
-        }
-        
-        function onMouseUp() {
-            isDragging = false;
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-        }
-        
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-    });
-}
-
 // --- FUNGSI UTAMA VOLUME DAN AUDIO ---
 
 /**
@@ -124,7 +54,6 @@ function initSounds() {
     elements.allSliders.forEach(slider => {
         slider.value = 0; // Volume awal 0
         slider.addEventListener('input', handleSliderChange);
-        setupSliderDrag(slider);
     });
 
     // Inisialisasi tampilan timer
@@ -372,7 +301,8 @@ elements.durationCycleBtn.addEventListener('click', () => {
 function getInitialScale() {
     if (window.innerWidth <= 640 && window.innerHeight > window.innerWidth) {
         if (window.innerHeight <= 520) return 0.70;
-        if (window.innerHeight <= 640) return 0.85;
+        if (window.innerHeight <= 640) return 0.80;
+        return 0.90; // Default skala awal portrait mobile untuk breathing room
     }
     return 1.0;
 }
@@ -381,7 +311,7 @@ function applyZoom() {
     const device = document.querySelector('.device');
     if (device) {
         if (window.innerWidth <= 640 && window.innerHeight > window.innerWidth) {
-            device.style.transform = `translate(-50%, -50%) rotate(90deg) scale(${state.zoomScale})`;
+            device.style.transform = `rotate(90deg) scale(${state.zoomScale})`;
         } else {
             device.style.transform = '';
         }
@@ -393,11 +323,80 @@ function initZoom() {
     applyZoom();
 }
 
+/**
+ * Mengatasi masalah event touch drag slider pada browser Firefox Mobile dan Chrome
+ * yang berada di dalam kontainer yang di-rotate.
+ */
+function initSliderTouchHelper() {
+    elements.allSliders.forEach(slider => {
+        let isDragging = false;
+
+        function updateValue(clientX, clientY) {
+            const rect = slider.getBoundingClientRect();
+            // Tentukan apakah slider secara visual horizontal atau vertikal di layar
+            const isVisualHorizontal = rect.width > rect.height;
+            let percent;
+            
+            if (isVisualHorizontal) {
+                // Mode Horizontal (e.g. mobile portrait setelah dirotasi 90deg)
+                const x = clientX - rect.left;
+                percent = (x / rect.width) * 100;
+            } else {
+                // Mode Vertikal (e.g. desktop)
+                const y = rect.bottom - clientY;
+                percent = (y / rect.height) * 100;
+            }
+            
+            percent = Math.max(0, Math.min(100, Math.round(percent)));
+            slider.value = percent;
+            
+            // Picu input event agar volume audio terupdate
+            const event = new Event('input', { bubbles: true });
+            slider.dispatchEvent(event);
+        }
+
+        // Mouse Events
+        slider.addEventListener('mousedown', (e) => {
+            if (slider.disabled) return;
+            isDragging = true;
+            updateValue(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            updateValue(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch Events (Mobile)
+        slider.addEventListener('touchstart', (e) => {
+            if (slider.disabled) return;
+            isDragging = true;
+            const touch = e.touches[0];
+            updateValue(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        slider.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            updateValue(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        slider.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    });
+}
+
 // --- INISIALISASI APLIKASI ---
 function initApp() {
     initSounds();
     toggleControls(false);
     initZoom();
+    initSliderTouchHelper();
     
     // Bind zoom button actions and resize handler
     window.addEventListener('resize', initZoom);
