@@ -36,6 +36,76 @@ const elements = {
     lcdElement: document.querySelector('.lcd')
 };
 
+// --- KONTROL DRAG SLIDER KUSTOM ---
+
+/**
+ * Mengatur interaksi seret/geser sentuh (touch/drag) kustom untuk range slider
+ */
+function setupSliderDrag(slider) {
+    let isDragging = false;
+
+    function updateValueFromCoords(clientX, clientY) {
+        const rect = slider.getBoundingClientRect();
+        const isRotated = window.innerWidth <= 640 && window.innerHeight > window.innerWidth;
+        
+        let pct = 0;
+        if (isRotated) {
+            // Jika terputar (portrait mobile), slider terlihat horizontal di layar.
+            // Ujung kiri adalah 0, ujung kanan adalah 100.
+            pct = (clientX - rect.left) / rect.width;
+        } else {
+            // Jika normal (desktop/landscape), slider terlihat vertikal di layar.
+            // Ujung bawah adalah 0, ujung atas adalah 100.
+            pct = (rect.bottom - clientY) / rect.height;
+        }
+        
+        pct = Math.max(0, Math.min(1, pct));
+        const val = Math.round(pct * 100);
+        slider.value = val;
+        
+        const soundFile = slider.getAttribute('data-sound-file');
+        updateAudioVolume(soundFile, val);
+        checkPlayingStatus();
+    }
+
+    slider.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        const touch = e.touches[0];
+        updateValueFromCoords(touch.clientX, touch.clientY);
+        e.preventDefault();
+    }, { passive: false });
+
+    slider.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        updateValueFromCoords(touch.clientX, touch.clientY);
+        e.preventDefault();
+    }, { passive: false });
+
+    slider.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+
+    slider.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateValueFromCoords(e.clientX, e.clientY);
+        
+        function onMouseMove(moveEvent) {
+            if (!isDragging) return;
+            updateValueFromCoords(moveEvent.clientX, moveEvent.clientY);
+        }
+        
+        function onMouseUp() {
+            isDragging = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        }
+        
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+}
+
 // --- FUNGSI UTAMA VOLUME DAN AUDIO ---
 
 /**
@@ -54,6 +124,7 @@ function initSounds() {
     elements.allSliders.forEach(slider => {
         slider.value = 0; // Volume awal 0
         slider.addEventListener('input', handleSliderChange);
+        setupSliderDrag(slider);
     });
 
     // Inisialisasi tampilan timer
@@ -310,7 +381,7 @@ function applyZoom() {
     const device = document.querySelector('.device');
     if (device) {
         if (window.innerWidth <= 640 && window.innerHeight > window.innerWidth) {
-            device.style.transform = `rotate(90deg) scale(${state.zoomScale})`;
+            device.style.transform = `translate(-50%, -50%) rotate(90deg) scale(${state.zoomScale})`;
         } else {
             device.style.transform = '';
         }
